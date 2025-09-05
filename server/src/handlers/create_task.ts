@@ -1,17 +1,26 @@
+import { db } from '../db';
+import { tasksTable } from '../db/schema';
 import { type CreateTaskInput, type Task } from '../schema';
 
 export const createTask = async (input: CreateTaskInput): Promise<Task> => {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is creating a new task and persisting it in the database.
-  // It should validate the input, insert the task into the database, and return the created task.
-  return Promise.resolve({
-    id: 1, // Placeholder ID
-    title: input.title,
-    description: input.description,
-    status: 'pending' as const,
-    priority: input.priority,
-    due_date: input.due_date,
-    created_at: new Date(),
-    updated_at: new Date()
-  } as Task);
+  try {
+    // Insert task record
+    const result = await db.insert(tasksTable)
+      .values({
+        title: input.title,
+        description: input.description,
+        priority: input.priority, // Already has default from Zod schema
+        due_date: input.due_date,
+        // status, created_at, updated_at will use database defaults
+      })
+      .returning()
+      .execute();
+
+    // Return the created task
+    const task = result[0];
+    return task;
+  } catch (error) {
+    console.error('Task creation failed:', error);
+    throw error;
+  }
 };
